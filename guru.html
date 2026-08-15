@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Image Processor Pro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --card: #f1f5f9;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-contrast: #ffffff;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b1220;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --card: #1e293b;
+      --border: #334155;
+      --primary: #3b82f6;
+      --primary-contrast: #0b1220;
+      --danger: #f87171;
+      --success: #4ade80;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    header h1 {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    button, .btn {
+      background: var(--primary);
+      color: var(--primary-contrast);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    button.danger {
+      background: var(--danger);
+      color: #0b1220;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin: 0 0 10px 0;
+      color: var(--muted);
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="file"] {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    .auth-section {
+      display: none;
+    }
+
+    .auth-section.active {
+      display: block;
+    }
+
+    .app-section {
+      display: none;
+    }
+
+    .app-section.active {
+      display: block;
+    }
+
+    .preview-area {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .preview-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .preview-box h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    img, canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      background: #0b1220;
+    }
+
+    .note {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .gallery-item {
+      position: relative;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .gallery-item .actions {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: 6px;
+      padding: 6px;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .gallery-item .actions button {
+      flex: 1;
+      font-size: 0.75rem;
+      padding: 4px 6px;
+    }
+
+    .user-info {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 600px) {
+      .preview-area {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Image Processor Pro</h1>
+    <div class="header-controls">
+      <button id="themeToggle" class="secondary">Toggle Theme</button>
+      <span id="userInfo" class="user-info"></span>
+      <button id="logoutBtn" class="secondary" style="display:none;">Logout</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-section card">
+      <h2>Login / Register</h2>
+      <div class="row">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="e.g. alice" />
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="any (local only)" />
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button id="loginBtn">Login / Register</button>
+      </div>
+      <p class="note">
+        This is a demo: credentials are stored only in your browser (localStorage).
+      </p>
+    </div>
+
+    <!-- App Section -->
+    <div id="appSection" class="app-section">
+      <div class="card">
+        <h2>Process Image</h2>
+        <div class="row">
+          <input type="file" id="imageInput" accept="image/*" />
+          <button id="downloadBtn" disabled>Download Processed</button>
+        </div>
+
+        <div class="preview-area">
+          <div class="preview-box">
+            <h3>Original</h3>
+            <img id="originalPreview" alt="Original preview" />
+          </div>
+          <div class="preview-box">
+            <h3>Processed (thumbnail)</h3>
+            <img id="processedPreview" alt="Processed preview" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <button id="saveToGalleryBtn" disabled>Save to Gallery</button>
+        </div>
+
+        <p class="note">
+          Thumbnail: max 300×300, aspect ratio preserved. All processing happens in your browser.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>My Gallery</h2>
+        <div class="row">
+          <button id="clearGalleryBtn" class="danger">Clear Gallery</button>
+        </div>
+        <div id="gallery" class="gallery"></div>
+        <p class="note">
+          Images are saved per user in localStorage. Clearing removes them from this browser only.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Theme handling (dark/light) ----------
+    const themeToggle = document.getElementById("themeToggle");
+    const body = document.body;
+
+    function applyTheme(theme) {
+      body.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    }
+
+    function initTheme() {
+      const saved = localStorage.getItem("theme");
+      if (saved) {
+        applyTheme(saved);
+      } else {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        applyTheme(prefersDark ? "dark" : "light");
+      }
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const current = body.getAttribute("data-theme") || "light";
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+
+    initTheme();
+
+    // ---------- Auth (login/logout) ----------
+    const authSection = document.getElementById("authSection");
+    const appSection = document.getElementById("appSection");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const userInfo = document.getElementById("userInfo");
+
+    function getUsers() {
+      const raw = localStorage.getItem("users") || "{}";
+      return JSON.parse(raw);
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+
+    function getCurrentUser() {
+      return localStorage.getItem("currentUser") || null;
+    }
+
+    function setCurrentUser(username) {
+      if (!username) {
+        localStorage.removeItem("currentUser");
+      } else {
+        localStorage.setItem("currentUser", username);
+      }
+    }
+
+    function renderAuth() {
+      const user = getCurrentUser();
+      if (user) {
+        authSection.classList.remove("active");
+        appSection.classList.add("active");
+        logoutBtn.style.display = "inline-block";
+        userInfo.textContent = `Logged in as: ${user}`;
+        renderGallery();
+      } else {
+        authSection.classList.add("active");
+        appSection.classList.remove("active");
+        logoutBtn.style.display = "none";
+        userInfo.textContent = "";
+      }
+    }
+
+    loginBtn.addEventListener("click", () => {
+      const username = (usernameInput.value || "").trim().toLowerCase();
+      const password = passwordInput.value || "";
+
+      if (!username) {
+        alert("Please enter a username.");
+        return;
+      }
+
+      const users = getUsers();
+      if (!users[username]) {
+        // "Register" new user
+        users[username] = { password }; // demo only, no security
+        saveUsers(users);
+      } else {
+        // Simple check (demo only)
+        if (users[username].password !== password) {
+          alert("Wrong password for this username.");
+          return;
+        }
+      }
+
+      setCurrentUser(username);
+      usernameInput.value = "";
+      passwordInput.value = "";
+      renderAuth();
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      setCurrentUser(null);
+      renderAuth();
+    });
+
+    // ---------- Image processing ----------
+    const imageInput = document.getElementById("imageInput");
+    const originalPreview = document.getElementById("originalPreview");
+    const processedPreview = document.getElementById("processedPreview");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const saveToGalleryBtn = document.getElementById("saveToGalleryBtn");
+
+    const THUMBNAIL_SIZE = { width: 300, height: 300 };
+
+    let processedDataUrl = null;
+    let processedMimeType = "image/jpeg";
+    let originalFileName = "";
+
+    function processImageFile(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          let { width, height } = img;
+          const ratio = Math.min(
+            THUMBNAIL_SIZE.width / width,
+            THUMBNAIL_SIZE.height / height,
+            1
+          );
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          let mimeType = file.type || "image/jpeg";
+          if (!mimeType.startsWith("image/")) {
+            mimeType = "image/jpeg";
+          }
+
+          const dataUrl = canvas.toDataURL(mimeType, 0.92);
+          callback({ dataUrl, mimeType, width, height });
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    imageInput.addEventListener("change", function (e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      processedDataUrl = null;
+      downloadBtn.disabled = true;
+      saveToGalleryBtn.disabled = true;
+      processedPreview.src = "";
+      originalFileName = file.name;
+
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        originalPreview.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      processImageFile(file, ({ dataUrl, mimeType }) => {
+        processedDataUrl = dataUrl;
+        processedMimeType = mimeType;
+        processedPreview.src = dataUrl;
+        downloadBtn.disabled = false;
+        saveToGalleryBtn.disabled = false;
+      });
+    });
+
+    downloadBtn.addEventListener("click", function () {
+      if (!processedDataUrl) return;
+      const link = document.createElement("a");
+      link.href = processedDataUrl;
+      const base = originalFileName.replace(/\.[^/.]+$/, "");
+      const ext = processedMimeType.split("/")[1] || "jpg";
+      link.download = `${base}-thumb.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // ---------- Gallery (per user) ----------
+    const galleryEl = document.getElementById("gallery");
+    const clearGalleryBtn = document.getElementById("clearGalleryBtn");
+
+    function getGalleryKey(username) {
+      return `gallery_${username}`;
+    }
+
+    function getGalleryImages(username) {
+      const key = getGalleryKey(username);
+      const raw = localStorage.getItem(key) || "[]";
+      return JSON.parse(raw);
+    }
+
+    function saveGalleryImages(username, images) {
+      const key = getGalleryKey(username);
+      localStorage.setItem(key, JSON.stringify(images));
+    }
+
+    function renderGallery() {
+      const user = getCurrentUser();
+      if (!user) {
+        galleryEl.innerHTML = "";
+        return;
+      }
+      const images = getGalleryImages(user);
+      galleryEl.innerHTML = "";
+
+      if (images.length === 0) {
+        galleryEl.innerHTML = `<p class="note">No images saved yet. Process an image and click "Save to Gallery".</p>`;
+        return;
+      }
+
+      images.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = "gallery-item";
+
+        const img = document.createElement("img");
+        img.src = item.dataUrl;
+        img.alt = item.name || "Processed image";
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const downloadBtnG = document.createElement("button");
+        downloadBtnG.textContent = "Download";
+        downloadBtnG.addEventListener("click", () => {
+          const link = document.createElement("a");
+          link.href = item.dataUrl;
+          link.download = item.name || `image-${index}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+
+        const deleteBtnG = document.createElement("button");
+        deleteBtnG.textContent = "Delete";
+        deleteBtnG.className = "danger";
+        deleteBtnG.addEventListener("click", () => {
+          const imgs = getGalleryImages(user);
+          imgs.splice(index, 1);
+          saveGalleryImages(user, imgs);
+          renderGallery();
+        });
+
+        actions.appendChild(downloadBtnG);
+        actions.appendChild(deleteBtnG);
+
+        div.appendChild(img);
+        div.appendChild(actions);
+        galleryEl.appendChild(div);
+      });
+    }
+
+    saveToGalleryBtn.addEventListener("click", () => {
+      const user = getCurrentUser();
+      if (!user || !processedDataUrl) return;
+
+      const images = getGalleryImages(user);
+      const name = `${originalFileName.replace(/\.[^/.]+$/, "")}-thumb.${processedMimeType.split("/")[1] || "jpg"}`;
+      images.push({
+        name,
+        dataUrl: processedDataUrl,
+        mimeType: processedMimeType,
+        savedAt: Date.now(),
+      });
+      saveGalleryImages(user, images);
+      renderGallery();
+    });
+
+    clearGalleryBtn.addEventListener("click", () => {
+      const user = getCurrentUser();
+      if (!user) return;
+      if (!confirm("Clear all images in your gallery?")) return;
+      saveGalleryImages(user, []);
+      renderGallery();
+    });
+
+    // ---------- Init ----------
+    renderAuth();
+  </script>
+</body>
+</html>
